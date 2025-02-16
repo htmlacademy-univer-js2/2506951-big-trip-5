@@ -4,7 +4,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
   mode: 'production',
-  entry: './src/main.js', // Точка входа
+  entry: path.resolve(__dirname, 'src', 'main.js'), // Точка входа
   output: {
     path: path.resolve(__dirname, 'build'), // Абсолютный путь к папке сборки
     filename: 'bundle.[contenthash].js', // Имя файла сборки с хэшем
@@ -27,7 +27,7 @@ module.exports = {
   },
   plugins: [
     new CopyWebpackPlugin({
-      patterns: [{ from: 'public', to: 'build' }], // Копирует файлы из public в build
+      patterns: [{ from: 'public', to: '', globOptions: { ignore: ['**/index.html'] } }],
     }),
     new HtmlWebpackPlugin({
       template: 'public/index.html', // Использует index.html как шаблон
