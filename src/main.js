@@ -1,4 +1,4 @@
-import Presenter from './presenter/presenter.js';
+import Presenter from './presenter/presenter';
 import EventsModel from './models/events-model';
 
 const eventsModel = new EventsModel();

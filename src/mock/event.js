@@ -5,7 +5,7 @@ const mockEvents = [
     'date_from': new Date('February 20, 2025 03:24:00'),
     'date_to': new Date('February 20, 2025 03:54:00'),
     'destination': 'gnv',
-    'is_favorite': true,
+    'is_favourite': true,
     'offers': [
       'uber'
     ],
@@ -17,7 +17,7 @@ const mockEvents = [
     'date_from': new Date('February 20, 2025 10:24:00'),
     'date_to': new Date('February 23, 2025 06:24:00'),
     'destination': 'chm',
-    'is_favorite': true,
+    'is_favourite': true,
     'offers': [
       'luggage',
       'comfort'
@@ -30,7 +30,7 @@ const mockEvents = [
     'date_from': new Date('February 22, 2025 10:24:00'),
     'date_to': new Date('February 23, 2025 20:24:00'),
     'destination': 'amst',
-    'is_favorite': false,
+    'is_favourite': false,
     'offers': [
       'rent'
     ],
