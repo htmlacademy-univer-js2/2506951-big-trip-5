@@ -53,4 +53,8 @@ function getOffer(id, offers) {
   return offers?.find((d) => d.id === id);
 }
 
-export {formatDate, getDuration, getEvent, getDestination, getEventIconUrl, getTypeOffers, getOffer};
+function updateItem(items, update) {
+  return items.map((item) => item.id === update.id ? update : item);
+}
+
+export {formatDate, getDuration, getEvent, getDestination, getEventIconUrl, getTypeOffers, getOffer, updateItem};
