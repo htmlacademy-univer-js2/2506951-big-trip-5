@@ -1,5 +1,5 @@
-import {createElement} from '../render';
 import {formatDate, getDestination, getEventIconUrl, getTypeOffers} from '../utils/utils';
+import AbstractView from '../framework/view/abstract-view';
 
 
 function getOfferTemplate(offer, eventOffers) {
@@ -19,11 +19,11 @@ function getOfferTemplate(offer, eventOffers) {
 }
 
 function getEditFormTemplate(event, destinations, offers) {
-  const {dateFrom, dateTo, type: eventType, destination: eventDestination, basePrice, offers: eventOffers} = event;
+  const {date_from, date_to, type: eventType, destination: eventDestination, base_price, offers: eventOffers} = event;
   const destination = getDestination(eventDestination, destinations);
   const eventIconUrl = getEventIconUrl(eventType);
-  const startTime = formatDate(dateFrom, 'DD/MM/YY HH:MM');
-  const endTime = formatDate(dateTo, 'DD/MM/YY HH:MM');
+  const startTime = formatDate(date_from, 'DD/MM/YY HH:MM');
+  const endTime = formatDate(date_to, 'DD/MM/YY HH:MM');
   const typeOffers = getTypeOffers(eventType, offers) || [];
   const isEventTypeChecked = (type) => type === eventType ? 'checked' : '';
 
@@ -92,20 +92,20 @@ function getEditFormTemplate(event, destinations, offers) {
 
                   <div class="event__field-group  event__field-group--destination">
                     <label class="event__label  event__type-output" for="event-destination-1">
-                        ${eventType}
+                      ${eventType}
                     </label>
-                     <input class="event__input  event__input--destination" id="event-destination-1" type="text" name="event-destination" value="${destination.name}" list="destination-list-1">
+                    <input class="event__input  event__input--destination" id="event-destination-1" type="text" name="event-destination" value="${destination.name}" list="destination-list-1">
                     <datalist id="destination-list-1">
-                          ${destinations.map((d) => `<option value="${d.id}" >${d.name}</option>`).join('')}
+                        ${destinations.map((d) => `<option value="${d.id}" >${d.name}</option>`).join('')}
                     </datalist>
                   </div>
 
                   <div class="event__field-group  event__field-group--time">
                     <label class="visually-hidden" for="event-start-time-1">From</label>
-                     <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${startTime}">
+                    <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${startTime}">
                     &mdash;
                     <label class="visually-hidden" for="event-end-time-1">To</label>
-                     <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${endTime}">
+                    <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${endTime}">
                   </div>
 
                   <div class="event__field-group  event__field-group--price">
@@ -113,7 +113,7 @@ function getEditFormTemplate(event, destinations, offers) {
                       <span class="visually-hidden">Price</span>
                       &euro;
                     </label>
-                      <input class="event__input  event__input--price" id="event-price-1" type="text" name="event-price" value="${basePrice}">
+                    <input class="event__input  event__input--price" id="event-price-1" type="text" name="event-price" value="${base_price}">
                   </div>
 
                   <button class="event__save-btn  btn  btn--blue" type="submit">Save</button>
@@ -133,7 +133,7 @@ function getEditFormTemplate(event, destinations, offers) {
 
                   <section class="event__section  event__section--destination">
                     <h3 class="event__section-title  event__section-title--destination">Destination</h3>
-                     <p class="event__destination-description">${destination.description}</p>
+                    <p class="event__destination-description">${destination.description}</p>
                   </section>
                 </section>
               </form>
@@ -141,25 +141,24 @@ function getEditFormTemplate(event, destinations, offers) {
   `;
 }
 
-export default class EditForm {
-  constructor({event, destinations, offers}) {
-    this.event = event;
-    this.destinations = destinations;
-    this.offers = offers;
+export default class EditForm extends AbstractView {
+  #event = null;
+  #destinations = null;
+  #offers = null;
+
+  constructor({event, destinations, offers, submitHandler, clickHandler}) {
+    super();
+    this.#event = event;
+    this.#destinations = destinations;
+    this.#offers = offers;
+    this.element.querySelector('.event.event--edit').addEventListener('submit', submitHandler);
+    this.element.querySelector('.event__rollup-btn').addEventListener('click', (clickEvent) => {
+      clickEvent.preventDefault();
+      clickHandler();
+    });
   }
 
-  getTemplate() {
-    return getEditFormTemplate(this.event, this.destinations, this.offers);
-  }
-
-  getElement() {
-    if (!this.element) {
-      this.element = createElement(this.getTemplate());
-    }
-    return this.element;
-  }
-
-  removeElement() {
-    this.element = null;
+  get template() {
+    return getEditFormTemplate(this.#event, this.#destinations, this.#offers);
   }
 }

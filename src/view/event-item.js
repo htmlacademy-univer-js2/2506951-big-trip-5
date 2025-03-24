@@ -1,4 +1,3 @@
-import {createElement} from '../render';
 import {
   formatDate,
   getDuration,
@@ -8,6 +7,7 @@ import {
   getOffer,
   getTypeOffers
 } from '../utils/utils';
+import AbstractView from '../framework/view/abstract-view';
 
 function getOfferTemplate(id, type, offers){
   const typeOffers = getTypeOffers(type, offers) || [];
@@ -23,39 +23,39 @@ function getOfferTemplate(id, type, offers){
 }
 
 function getEventItemTemplate(event, destinations, offers) {
-  const {dateFrom, dateTo, type, destination: eventDestionation, basePrice, isFavourite, offers: eventOffers} = event;
-  const startDay = formatDate(dateFrom, 'MMM D');
-  const startDayValue = formatDate(dateFrom, 'YYYY-MM-DD');
-  const duration = getDuration(dateFrom, dateTo);
-  const destination = getDestination(eventDestionation, destinations);
+  const {date_from, date_to, type, destination: eventDestination, base_price, is_favorite, offers: eventOffers} = event;
+  const startDay = formatDate(date_from, 'MMM D');
+  const startDayValue = formatDate(date_from, 'YYYY-MM-DD');
+  const duration = getDuration(date_from, date_to);
+  const destination = getDestination(eventDestination, destinations);
   const eventTitle = getEvent(type, destination?.name);
   const eventIconUrl = getEventIconUrl(type);
-  const startTime = formatDate(dateFrom, 'HH:MM');
-  const endTime = formatDate(dateTo, 'HH:MM');
-  const favoriteClass = isFavourite ? 'event__favorite-btn--active' : '';
+  const startTime = formatDate(date_from, 'HH:MM');
+  const endTime = formatDate(date_to, 'HH:MM');
+  const favoriteClass = is_favorite ? 'event__favorite-btn--active' : '';
 
   return `
             <li class="trip-events__item">
               <div class="event">
-                 <time class="event__date" datetime="${startDayValue}">${startDay}</time>
+                <time class="event__date" datetime="${startDayValue}">${startDay}</time>
                 <div class="event__type">
-                   <img class="event__type-icon" width="42" height="42" src="${eventIconUrl}" alt="Event type icon">
+                  <img class="event__type-icon" width="42" height="42" src="${eventIconUrl}" alt="Event type icon">
                 </div>
-                 <h3 class="event__title">${eventTitle}</h3>
+                <h3 class="event__title">${eventTitle}</h3>
                 <div class="event__schedule">
                   <p class="event__time">
-                     <time class="event__start-time" datetime="${dateFrom.toISOString()}">${startTime}</time>
+                    <time class="event__start-time" datetime="${date_from.toISOString()}">${startTime}</time>
                     &mdash;
-                    <time class="event__end-time" datetime="${dateFrom.toISOString()}">${endTime}</time>
+                    <time class="event__end-time" datetime="${date_to.toISOString()}">${endTime}</time>
                   </p>
-                   <p class="event__duration">${duration}</p>
+                  <p class="event__duration">${duration}</p>
                 </div>
                 <p class="event__price">
-                   &euro;&nbsp;<span class="event__price-value">${basePrice}</span>
+                  &euro;&nbsp;<span class="event__price-value">${base_price}</span>
                 </p>
                 <h4 class="visually-hidden">Offers:</h4>
                 <ul class="event__selected-offers">
-                   ${eventOffers.map((id) => getOfferTemplate(id, type, offers)).join('')}
+                 ${eventOffers.map((id) => getOfferTemplate(id, type, offers)).join('')}
                 </ul>
                 <button class="event__favorite-btn ${favoriteClass}" type="button">
                   <span class="visually-hidden">Add to favorite</span>
@@ -71,26 +71,27 @@ function getEventItemTemplate(event, destinations, offers) {
   `;
 }
 
-export default class EventItem {
-  constructor({event, destinations, offers}) {
-    this.event = event;
-    this.destinations = destinations;
-    this.offers = offers;
+export default class EventItem extends AbstractView {
+  #event = null;
+  #destinations = null;
+  #offers = null;
+
+  constructor({event, destinations, offers, clickHandler, favoriteClickHandler}) {
+    super();
+    this.#event = event;
+    this.#destinations = destinations;
+    this.#offers = offers;
+    this.element.querySelector('.event__rollup-btn').addEventListener('click', (eventClick) => {
+      eventClick.preventDefault();
+      clickHandler();
+    });
+    this.element.querySelector('.event__favorite-btn').addEventListener('click', (eventClick) => {
+      eventClick.preventDefault();
+      favoriteClickHandler();
+    });
   }
 
-  getTemplate() {
-    return getEventItemTemplate(this.event, this.destinations, this.offers);
-  }
-
-  getElement() {
-    if (!this.element) {
-      this.element = createElement(this.getTemplate());
-    }
-
-    return this.element;
-  }
-
-  removeElement() {
-    this.element = null;
+  get template() {
+    return getEventItemTemplate(this.#event, this.#destinations, this.#offers);
   }
 }
