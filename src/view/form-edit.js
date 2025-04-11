@@ -1,15 +1,19 @@
-import {formatDate, getDestination, getEventIconUrl, getTypeOffers} from '../utils/utils';
-import AbstractView from '../framework/view/abstract-view';
+/* eslint-disable camelcase */
+import {formatDate, getDestination, getDuration, getEventIconUrl, getTypeOffers} from '../utils/utils';
+import AbstractStatefulView from '../framework/view/abstract-stateful-view';
+import flatpickr from 'flatpickr';
 
+import 'flatpickr/dist/flatpickr.min.css';
 
 function getOfferTemplate(offer, eventOffers) {
   const {title, price, id} = offer;
   const isChecked = eventOffers.includes(id);
+  const controlId = `event-offer-${id}-1`;
 
   return `
           <div class="event__offer-selector">
-            <input class="event__offer-checkbox  visually-hidden" id="event-offer-luggage-1" type="checkbox" name="event-offer-luggage" ${isChecked ? 'checked' : ''}">
-            <label class="event__offer-label" for="event-offer-luggage-1">
+            <input class="event__offer-checkbox  visually-hidden" id="${controlId}" type="checkbox" name="event-offer-${id}" value="${id}" ${isChecked ? 'checked' : ''}>
+            <label class="event__offer-label" for="${controlId}">
               <span class="event__offer-title">${title}</span>
                 &plus;&euro;&nbsp;
               <span class="event__offer-price">${price}</span>
@@ -26,6 +30,12 @@ function getEditFormTemplate(event, destinations, offers) {
   const endTime = formatDate(date_to, 'DD/MM/YY HH:MM');
   const typeOffers = getTypeOffers(eventType, offers) || [];
   const isEventTypeChecked = (type) => type === eventType ? 'checked' : '';
+
+  const priceNumber = Number(base_price);
+  const isPriceValid = !Number.isNaN(priceNumber) && priceNumber > 0;
+  const isDestinationValid = !!destination;
+  const isDurationValid = !!getDuration(date_from, date_to);
+  const isSubmitDisabled = !isPriceValid || !isDestinationValid || !isDurationValid;
 
   return `
             <li class="trip-events__item">
@@ -94,7 +104,7 @@ function getEditFormTemplate(event, destinations, offers) {
                     <label class="event__label  event__type-output" for="event-destination-1">
                       ${eventType}
                     </label>
-                    <input class="event__input  event__input--destination" id="event-destination-1" type="text" name="event-destination" value="${destination.name}" list="destination-list-1">
+                    <input class="event__input  event__input--destination" id="event-destination-1" type="text" name="event-destination" value="${destination?.name ?? ''}" list="destination-list-1">
                     <datalist id="destination-list-1">
                         ${destinations.map((d) => `<option value="${d.id}" >${d.name}</option>`).join('')}
                     </datalist>
@@ -116,7 +126,7 @@ function getEditFormTemplate(event, destinations, offers) {
                     <input class="event__input  event__input--price" id="event-price-1" type="text" name="event-price" value="${base_price}">
                   </div>
 
-                  <button class="event__save-btn  btn  btn--blue" type="submit">Save</button>
+                  <button class="event__save-btn  btn  btn--blue" type="submit" ${isSubmitDisabled ? 'disabled' : ''}>Save</button>
                   <button class="event__reset-btn" type="reset">Delete</button>
                   <button class="event__rollup-btn" type="button">
                     <span class="visually-hidden">Open event</span>
@@ -133,7 +143,7 @@ function getEditFormTemplate(event, destinations, offers) {
 
                   <section class="event__section  event__section--destination">
                     <h3 class="event__section-title  event__section-title--destination">Destination</h3>
-                    <p class="event__destination-description">${destination.description}</p>
+                    <p class="event__destination-description">${destination?.description ?? ''}</p>
                   </section>
                 </section>
               </form>
@@ -141,24 +151,96 @@ function getEditFormTemplate(event, destinations, offers) {
   `;
 }
 
-export default class EditForm extends AbstractView {
-  #event = null;
+export default class EditForm extends AbstractStatefulView {
   #destinations = null;
   #offers = null;
+  #handleFormSubmit = null;
+  #handleClick = null;
+  #datepicker = null;
+
+  #typeChangeHandler = (evt) => {
+    evt.preventDefault();
+    this.updateElement({type: evt.target.value, offers: [] });
+  };
+
+  #destinationChangeHandler = (evt) => {
+    evt.preventDefault();
+    this.updateElement({destination: evt.target.value});
+  };
+
+  #priceChangeHandler = (evt) => {
+    evt.preventDefault();
+    this.updateElement({base_price: evt.target.value});
+  };
+
+  #offersChangeHandler = (evt) => {
+    evt.preventDefault();
+    const {offers} = this._state;
+    const {value} = evt.target;
+    const newOffers = offers.includes(value) ? offers.filter((i) => i !== value) : [...offers, value];
+    this.updateElement({offers: newOffers});
+  };
+
+  #dateChangeHandler = (date, isStartTime) => {
+    const payload = isStartTime ? {date_from: date} : {date_to: date};
+    this.updateElement(payload);
+  };
+
+  #setDatePicker = (evt) => {
+    const isStartTime = evt.target.getAttribute('name') === 'event-start-time';
+    this.#datepicker = flatpickr(
+      this.element.querySelector('.event__field-group--time'),
+      {
+        dateFormat: 'H i',
+        defaultDate: isStartTime ? this._state.date_from : this._state.date_to,
+        enableTime: true,
+        onChange: (res) => this.#dateChangeHandler(res[0], isStartTime),
+      },
+    );
+  };
+
+  #submitFormHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleFormSubmit(this._state);
+  };
 
   constructor({event, destinations, offers, submitHandler, clickHandler}) {
     super();
-    this.#event = event;
+    this._setState(event);
     this.#destinations = destinations;
     this.#offers = offers;
-    this.element.querySelector('.event.event--edit').addEventListener('submit', submitHandler);
-    this.element.querySelector('.event__rollup-btn').addEventListener('click', (clickEvent) => {
-      clickEvent.preventDefault();
-      clickHandler();
-    });
+    this.#handleFormSubmit = submitHandler;
+    this.#handleClick = clickHandler;
+    this._restoreHandlers();
   }
 
   get template() {
-    return getEditFormTemplate(this.#event, this.#destinations, this.#offers);
+    return getEditFormTemplate(this._state, this.#destinations, this.#offers);
+  }
+
+  removeElement() {
+    super.removeElement();
+
+    if (this.#datepicker) {
+      this.#datepicker.destroy();
+      this.#datepicker = null;
+    }
+  }
+
+  reset(event) {
+    this.updateElement(event);
+  }
+
+  _restoreHandlers() {
+    this.element.querySelector('.event.event--edit').addEventListener('submit', this.#submitFormHandler);
+    this.element.querySelector('.event__rollup-btn').addEventListener('click', (clickEvent) => {
+      clickEvent.preventDefault();
+      this.#handleClick();
+    });
+    this.element.querySelector('.event__type-group').addEventListener('change', this.#typeChangeHandler);
+    this.element.querySelector('.event__input--destination').addEventListener('change', this.#destinationChangeHandler);
+    this.element.querySelector('.event__input--price').addEventListener('change', this.#priceChangeHandler);
+    this.element.querySelectorAll('.event__offer-checkbox').forEach((element) => element.addEventListener('change', this.#offersChangeHandler));
+    this.element.querySelectorAll('.event__input--time').forEach((element) => element.addEventListener('click', this.#setDatePicker));
   }
 }
