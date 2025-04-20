@@ -20,8 +20,8 @@ export default class EventPresenter {
   #escKeyDownHandler = (evt) => {
     if (evt.key === 'Escape') {
       evt.preventDefault();
+      this.#editForm.reset(this.#event);
       this.#replaceFromEditToItem();
-      document.removeEventListener('keydown', this.#escKeyDownHandler);
     }
   };
 
@@ -37,20 +37,25 @@ export default class EventPresenter {
     const prEventItem = this.#eventItem;
     const prEditForm = this.#editForm;
     this.#event = event;
-    this.#editForm = new EditForm({event: this.#event, destinations: this.#destinations, offers: this.#offers, submitHandler: () => {
-      this.#replaceFromEditToItem();
-      document.removeEventListener('keydown', this.#escKeyDownHandler);
-    }, clickHandler: () => {
-      this.#replaceFromEditToItem();
-      document.removeEventListener('keydown', this.#escKeyDownHandler);
-    }});
+    this.#editForm = new EditForm({
+      event: this.#event,
+      destinations: this.#destinations,
+      offers: this.#offers,
+      submitHandler: (value) => {
+        this.#handleDataChange(value);
+        this.#replaceFromEditToItem();
+      },
+      clickHandler: () => {
+        this.#editForm.reset(this.#event);
+        this.#replaceFromEditToItem();
+      }
+    });
     this.#eventItem = new EventItem({
       event: this.#event,
       destinations: this.#destinations,
       offers: this.#offers,
       clickHandler: () => {
         this.#replaceFromItemToEdit();
-        document.addEventListener('keydown', this.#escKeyDownHandler);
       },
       favoriteClickHandler: () => {
         this.#handleFavoriteChange();
@@ -76,23 +81,26 @@ export default class EventPresenter {
 
   resetView() {
     if (this.#mode !== Mode.DEFAULT) {
+      this.#editForm.reset(this.#event);
       this.#replaceFromEditToItem();
     }
   }
 
   #replaceFromEditToItem() {
     replace(this.#eventItem, this.#editForm);
+    document.removeEventListener('keydown', this.#escKeyDownHandler);
     this.#mode = Mode.DEFAULT;
   }
 
   #replaceFromItemToEdit() {
     replace(this.#editForm, this.#eventItem);
+    document.addEventListener('keydown', this.#escKeyDownHandler);
     this.#handleModeChange();
     this.#mode = Mode.EDITING;
   }
 
   #handleFavoriteChange() {
     // eslint-disable-next-line camelcase
-    this.#handleDataChange({...this.#event, is_favourite: !this.#event.is_favourite});
+    this.#handleDataChange({...this.#event, is_favorite: !this.#event.is_favorite});
   }
 }
