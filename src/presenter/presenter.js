@@ -7,16 +7,28 @@ import {updateItem} from '../utils/utils';
 
 export default class Presenter {
   #eventListComponent = new EventList();
+  #sortingComponent = null;
   #eventsContainer = document.querySelector('.trip-events');
   #filterContainer = document.querySelector('.trip-controls__filters');
   #eventsModel = null;
   #events = null;
+  #currentSortType = 'day';
   #destinations = null;
   #offers = null;
   #eventPresenters = new Map();
   #handleEventChange = (updatedEvent) => {
     this.#events = updateItem(this.#events, updatedEvent);
     this.#eventPresenters.get(updatedEvent.id).init(updatedEvent);
+  };
+
+  #handleSortTypeChange = (sortType) => {
+    if (this.#currentSortType === sortType) {
+      return;
+    }
+    this.#currentSortType = sortType;
+    this.#clearEvents();
+    const sortedEvents = this.#getSortedEvents(sortType);
+    this.#renderEventsList(sortedEvents);
   };
 
   #handleModeChange = () => {
@@ -33,17 +45,16 @@ export default class Presenter {
     this.#offers = this.#eventsModel.offers;
 
     render(new Filters(), this.#filterContainer);
-    render(new Sorting(), this.#eventsContainer);
+    this.#sortingComponent = new Sorting({onSortTypeChange: this.#handleSortTypeChange});
+    render(this.#sortingComponent, this.#eventsContainer);
     render(this.#eventListComponent, this.#eventsContainer);
 
-    for (let i = 0; i < this.#events.length; i++) {
-      this.#renderEvent(this.#events[i]);
-    }
+    this.#renderEventsList(this.#events);
   }
 
   #renderEvent(event) {
     const eventPresenter = new EventPresenter({
-      destinations:this.#eventsModel.destinations,
+      destinations: this.#destinations,
       offers:this.#offers,
       eventListComponent: this.#eventListComponent,
       onDataChange: this.#handleEventChange,
@@ -51,5 +62,28 @@ export default class Presenter {
     });
     eventPresenter.init(event);
     this.#eventPresenters.set(event.id, eventPresenter);
+  }
+
+  #renderEventsList(events) {
+    events.forEach((event) => this.#renderEvent(event));
+  }
+
+  #clearEvents() {
+    this.#eventPresenters.clear();
+    this.#eventListComponent.element.innerHTML = '';
+  }
+
+  #getSortedEvents(sortType) {
+    const eventsCopy = [...this.#events];
+    switch (sortType) {
+      case 'day':
+        return eventsCopy.sort((a, b) => a.date_from - b.date_from);
+      case 'time':
+        return eventsCopy.sort((a, b) => (b.date_to - b.date_from) - (a.date_to - a.date_from));
+      case 'price':
+        return eventsCopy.sort((a, b) => b.base_price - a.base_price);
+      default:
+        return eventsCopy;
+    }
   }
 }
