@@ -5,7 +5,7 @@ import Sorting from '../view/sorting';
 import EventPresenter from './event-presenter';
 import {updateItem} from '../utils/utils';
 
-export default class Presenter {
+export default class TripPresenter {
   #eventListComponent = new EventList();
   #sortingComponent = null;
   #eventsContainer = document.querySelector('.trip-events');
@@ -69,19 +69,19 @@ export default class Presenter {
   }
 
   #clearEvents() {
+    this.#eventPresenters.forEach((presenter) => presenter.remove());
     this.#eventPresenters.clear();
-    this.#eventListComponent.element.innerHTML = '';
   }
 
   #getSortedEvents(sortType) {
     const eventsCopy = [...this.#events];
     switch (sortType) {
       case 'day':
-        return eventsCopy.sort((a, b) => a.date_from - b.date_from);
+        return eventsCopy.sort((a, b) => a.dateFrom - b.dateFrom);
       case 'time':
-        return eventsCopy.sort((a, b) => (b.date_to - b.date_from) - (a.date_to - a.date_from));
+        return eventsCopy.sort((a, b) => (b.dateTo - b.dateFrom) - (a.dateTo - a.dateFrom));
       case 'price':
-        return eventsCopy.sort((a, b) => b.base_price - a.base_price);
+        return eventsCopy.sort((a, b) => b.basePrice - a.basePrice);
       default:
         return eventsCopy;
     }

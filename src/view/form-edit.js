@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import {formatDate, getDestination, getDuration, getEventIconUrl, getTypeOffers} from '../utils/utils';
 import AbstractStatefulView from '../framework/view/abstract-stateful-view';
 import flatpickr from 'flatpickr';
@@ -23,18 +22,18 @@ function getOfferTemplate(offer, eventOffers) {
 }
 
 function getEditFormTemplate(event, destinations, offers) {
-  const {date_from, date_to, type: eventType, destination: eventDestination, base_price, offers: eventOffers} = event;
+  const {dateFrom, dateTo, type: eventType, destination: eventDestination, basePrice, offers: eventOffers} = event;
   const destination = getDestination(eventDestination, destinations);
   const eventIconUrl = getEventIconUrl(eventType);
-  const startTime = formatDate(date_from, 'DD/MM/YY HH:MM');
-  const endTime = formatDate(date_to, 'DD/MM/YY HH:MM');
+  const startTime = formatDate(dateFrom, 'DD/MM/YY HH:MM');
+  const endTime = formatDate(dateTo, 'DD/MM/YY HH:MM');
   const typeOffers = getTypeOffers(eventType, offers) || [];
   const isEventTypeChecked = (type) => type === eventType ? 'checked' : '';
 
-  const priceNumber = Number(base_price);
+  const priceNumber = Number(basePrice);
   const isPriceValid = !Number.isNaN(priceNumber) && priceNumber > 0;
   const isDestinationValid = !!destination;
-  const isDurationValid = !!getDuration(date_from, date_to);
+  const isDurationValid = !!getDuration(dateFrom, dateTo);
   const isSubmitDisabled = !isPriceValid || !isDestinationValid || !isDurationValid;
 
   return `
@@ -123,7 +122,7 @@ function getEditFormTemplate(event, destinations, offers) {
                       <span class="visually-hidden">Price</span>
                       &euro;
                     </label>
-                    <input class="event__input  event__input--price" id="event-price-1" type="text" name="event-price" value="${base_price}">
+                    <input class="event__input  event__input--price" id="event-price-1" type="text" name="event-price" value="${basePrice}">
                   </div>
 
                   <button class="event__save-btn  btn  btn--blue" type="submit" ${isSubmitDisabled ? 'disabled' : ''}>Save</button>
@@ -170,7 +169,7 @@ export default class EditForm extends AbstractStatefulView {
 
   #priceChangeHandler = (evt) => {
     evt.preventDefault();
-    this.updateElement({base_price: evt.target.value});
+    this.updateElement({basePrice: evt.target.value});
   };
 
   #offersChangeHandler = (evt) => {
@@ -182,7 +181,7 @@ export default class EditForm extends AbstractStatefulView {
   };
 
   #dateChangeHandler = (date, isStartTime) => {
-    const payload = isStartTime ? {date_from: date} : {date_to: date};
+    const payload = isStartTime ? {dateFrom: date} : {dateTo: date};
     this.updateElement(payload);
   };
 
@@ -192,7 +191,7 @@ export default class EditForm extends AbstractStatefulView {
       this.element.querySelector('.event__field-group--time'),
       {
         dateFormat: 'H i',
-        defaultDate: isStartTime ? this._state.date_from : this._state.date_to,
+        defaultDate: isStartTime ? this._state.dateFrom : this._state.dateTo,
         enableTime: true,
         onChange: (res) => this.#dateChangeHandler(res[0], isStartTime),
       },

@@ -100,7 +100,11 @@ export default class EventPresenter {
   }
 
   #handleFavoriteChange() {
-    // eslint-disable-next-line camelcase
-    this.#handleDataChange({...this.#event, is_favorite: !this.#event.is_favorite});
+    this.#handleDataChange({...this.#event, isFavorite: !this.#event.isFavorite});
+  }
+
+  remove() {
+    remove(this.#eventItem);
+    remove(this.#editForm);
   }
 }

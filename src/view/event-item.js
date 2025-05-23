@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import {
   formatDate,
   getDuration,
@@ -24,16 +23,16 @@ function getOfferTemplate(id, type, offers){
 }
 
 function getEventItemTemplate(event, destinations, offers) {
-  const {date_from, date_to, type, destination: eventDestination, base_price, is_favorite, offers: eventOffers} = event;
-  const startDay = formatDate(date_from, 'MMM D');
-  const startDayValue = formatDate(date_from, 'YYYY-MM-DD');
-  const duration = getDuration(date_from, date_to);
+  const {dateFrom, dateTo, type, destination: eventDestination, basePrice, isFavorite, offers: eventOffers} = event;
+  const startDay = formatDate(dateFrom, 'MMM D');
+  const startDayValue = formatDate(dateFrom, 'YYYY-MM-DD');
+  const duration = getDuration(dateFrom, dateTo);
   const destination = getDestination(eventDestination, destinations);
   const eventTitle = getEvent(type, destination?.name);
   const eventIconUrl = getEventIconUrl(type);
-  const startTime = formatDate(date_from, 'HH:MM');
-  const endTime = formatDate(date_to, 'HH:MM');
-  const favoriteClass = is_favorite ? 'event__favorite-btn--active' : '';
+  const startTime = formatDate(dateFrom, 'HH:mm');
+  const endTime = formatDate(dateTo, 'HH:mm');
+  const favoriteClass = isFavorite ? 'event__favorite-btn--active' : '';
 
   return `
             <li class="trip-events__item">
@@ -45,14 +44,14 @@ function getEventItemTemplate(event, destinations, offers) {
                 <h3 class="event__title">${eventTitle}</h3>
                 <div class="event__schedule">
                   <p class="event__time">
-                    <time class="event__start-time" datetime="${date_from.toISOString()}">${startTime}</time>
+                    <time class="event__start-time" datetime="${dateFrom.toISOString()}">${startTime}</time>
                     &mdash;
-                    <time class="event__end-time" datetime="${date_to.toISOString()}">${endTime}</time>
+                    <time class="event__end-time" datetime="${dateTo.toISOString()}">${endTime}</time>
                   </p>
                   <p class="event__duration">${duration}</p>
                 </div>
                 <p class="event__price">
-                  &euro;&nbsp;<span class="event__price-value">${base_price}</span>
+                  &euro;&nbsp;<span class="event__price-value">${basePrice}</span>
                 </p>
                 <h4 class="visually-hidden">Offers:</h4>
                 <ul class="event__selected-offers">
