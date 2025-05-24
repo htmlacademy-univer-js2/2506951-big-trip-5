@@ -1,10 +1,12 @@
 import EditForm from '../view/form-edit';
 import EventItem from '../view/event-item';
-import {remove, render, replace} from '../framework/render';
+import {remove, render, replace, RenderPosition} from '../framework/render';
+import {ACTION_TYPE} from '../utils/const';
 
 const Mode = {
   DEFAULT: 'DEFAULT',
   EDITING: 'EDITING',
+  ADDING: 'ADDING'
 };
 
 export default class EventPresenter {
@@ -16,6 +18,7 @@ export default class EventPresenter {
   #event = null;
   #handleDataChange = null;
   #handleModeChange = null;
+  #handleDestroy = null;
   #mode = Mode.DEFAULT;
   #escKeyDownHandler = (evt) => {
     if (evt.key === 'Escape') {
@@ -31,9 +34,33 @@ export default class EventPresenter {
     this.#eventListComponent = eventListComponent;
     this.#handleDataChange = onDataChange;
     this.#handleModeChange = onModeChange;
+    this.#handleDestroy = arguments[0].onDestroy || (() => {});
   }
 
-  init(event) {
+  init(event, isNew = false) {
+    this.#event = event;
+    if (isNew) {
+      this.#mode = Mode.ADDING;
+      this.#editForm = new EditForm({
+        event: this.#event,
+        destinations: this.#destinations,
+        offers: this.#offers,
+        submitHandler: (value) => {
+          this.#handleDataChange(ACTION_TYPE.ADD_EVENT, value);
+          this.remove();
+        },
+        clickHandler: () => {
+          this.remove();
+        }
+      });
+      render(this.#editForm, this.#eventListComponent.element, RenderPosition.AFTERBEGIN);
+      const formElement = this.#editForm.element.querySelector('form');
+      formElement.addEventListener('reset', (evt) => {
+        evt.preventDefault();
+        this.remove();
+      });
+      return;
+    }
     const prEventItem = this.#eventItem;
     const prEditForm = this.#editForm;
     this.#event = event;
@@ -42,13 +69,14 @@ export default class EventPresenter {
       destinations: this.#destinations,
       offers: this.#offers,
       submitHandler: (value) => {
-        this.#handleDataChange(value);
+        this.#handleDataChange(ACTION_TYPE.UPDATE_EVENT, value);
         this.#replaceFromEditToItem();
       },
       clickHandler: () => {
         this.#editForm.reset(this.#event);
         this.#replaceFromEditToItem();
-      }
+      },
+      deleteHandler: this.#handleDeleteClick
     });
     this.#eventItem = new EventItem({
       event: this.#event,
@@ -100,11 +128,17 @@ export default class EventPresenter {
   }
 
   #handleFavoriteChange() {
-    this.#handleDataChange({...this.#event, isFavorite: !this.#event.isFavorite});
+    this.#handleDataChange(ACTION_TYPE.UPDATE_EVENT, {...this.#event, isFavorite: !this.#event.isFavorite});
   }
+
+  #handleDeleteClick = (evt) => {
+    evt.preventDefault();
+    this.#handleDataChange(ACTION_TYPE.DELETE_EVENT, this.#event);
+  };
 
   remove() {
     remove(this.#eventItem);
     remove(this.#editForm);
+    this.#handleDestroy();
   }
 }
