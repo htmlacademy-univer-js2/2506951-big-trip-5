@@ -1,7 +1,7 @@
-import Presenter from './presenter/presenter';
+import TripPresenter from './presenter/trip-presenter';
 import EventsModel from './models/events-model';
 
 const eventsModel = new EventsModel();
-const presenter = new Presenter({eventsModel});
+const presenter = new TripPresenter({eventsModel});
 
 presenter.init();

@@ -1,9 +1,9 @@
 const mockEvents = [
   {
     'id': '1',
-    'base_price': 2000,
-    'date_from': new Date('February 20, 2025 03:24:00'),
-    'date_to': new Date('February 20, 2025 03:54:00'),
+    'basePrice': 2000,
+    'dateFrom': new Date('February 20, 2025 03:24:00'),
+    'dateTo': new Date('February 20, 2025 03:54:00'),
     'destination': 'gnv',
     'is_favourite': true,
     'offers': [
@@ -13,9 +13,9 @@ const mockEvents = [
   },
   {
     'id': '2',
-    'base_price': 1200,
-    'date_from': new Date('February 20, 2025 10:24:00'),
-    'date_to': new Date('February 23, 2025 06:24:00'),
+    'basePrice': 1200,
+    'dateFrom': new Date('February 20, 2025 10:24:00'),
+    'dateTo': new Date('February 23, 2025 06:24:00'),
     'destination': 'chm',
     'is_favourite': true,
     'offers': [
@@ -26,9 +26,9 @@ const mockEvents = [
   },
   {
     'id': '3',
-    'base_price': 1600,
-    'date_from': new Date('February 22, 2025 10:24:00'),
-    'date_to': new Date('February 23, 2025 20:24:00'),
+    'basePrice': 1600,
+    'dateFrom': new Date('February 22, 2025 10:24:00'),
+    'dateTo': new Date('February 23, 2025 20:24:00'),
     'destination': 'amst',
     'is_favourite': false,
     'offers': [
