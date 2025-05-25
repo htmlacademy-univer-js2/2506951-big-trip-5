@@ -1,6 +1,6 @@
-import {render, replace, remove} from '../framework/render';
-import FiltersView from '../view/filters';
-import {UpdateType} from '../models/filter-model';
+import {render, replace, remove} from '../framework/render.js';
+import FiltersView from '../view/filters.js';
+import {UpdateType} from '../utils/const.js';
 
 export default class FilterPresenter {
   #filterContainer = null;
@@ -29,7 +29,7 @@ export default class FilterPresenter {
   }
 
   #handleFilterChange = (filterType) => {
-    this.#filterModel.setFilter(UpdateType.FILTER, filterType);
+    this.#filterModel.setFilter(UpdateType.MAJOR, filterType);
   };
 
   #handleModelEvent = () => {

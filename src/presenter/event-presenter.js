@@ -1,7 +1,7 @@
-import EditForm from '../view/form-edit';
-import EventItem from '../view/event-item';
-import {remove, render, replace, RenderPosition} from '../framework/render';
-import {ACTION_TYPE} from '../utils/const';
+import EditForm from '../view/form-edit.js';
+import EventItem from '../view/event-item.js';
+import {remove, render, replace, RenderPosition} from '../framework/render.js';
+import {ACTION_TYPE, UpdateType} from '../utils/const.js';
 
 const Mode = {
   DEFAULT: 'DEFAULT',
@@ -46,18 +46,18 @@ export default class EventPresenter {
         destinations: this.#destinations,
         offers: this.#offers,
         submitHandler: (value) => {
-          this.#handleDataChange(ACTION_TYPE.ADD_EVENT, value);
-          this.remove();
+          this.#handleDataChange(ACTION_TYPE.ADD_EVENT, UpdateType.MINOR, value);
+          this.destroy();
         },
         clickHandler: () => {
-          this.remove();
+          this.destroy();
         }
       });
       render(this.#editForm, this.#eventListComponent.element, RenderPosition.AFTERBEGIN);
       const formElement = this.#editForm.element.querySelector('form');
       formElement.addEventListener('reset', (evt) => {
         evt.preventDefault();
-        this.remove();
+        this.destroy();
       });
       return;
     }
@@ -69,7 +69,7 @@ export default class EventPresenter {
       destinations: this.#destinations,
       offers: this.#offers,
       submitHandler: (value) => {
-        this.#handleDataChange(ACTION_TYPE.UPDATE_EVENT, value);
+        this.#handleDataChange(ACTION_TYPE.UPDATE_EVENT, UpdateType.PATCH, value);
         this.#replaceFromEditToItem();
       },
       clickHandler: () => {
@@ -114,6 +114,15 @@ export default class EventPresenter {
     }
   }
 
+  setAborting() {
+    if (this.#mode === Mode.EDITING || this.#mode === Mode.ADDING) {
+      this.#editForm.shake();
+      return;
+    }
+
+    this.#eventItem.shake();
+  }
+
   #replaceFromEditToItem() {
     replace(this.#eventItem, this.#editForm);
     document.removeEventListener('keydown', this.#escKeyDownHandler);
@@ -128,15 +137,14 @@ export default class EventPresenter {
   }
 
   #handleFavoriteChange() {
-    this.#handleDataChange(ACTION_TYPE.UPDATE_EVENT, {...this.#event, isFavorite: !this.#event.isFavorite});
+    this.#handleDataChange(ACTION_TYPE.UPDATE_EVENT, UpdateType.PATCH, {...this.#event, isFavorite: !this.#event.isFavorite});
   }
 
-  #handleDeleteClick = (evt) => {
-    evt.preventDefault();
-    this.#handleDataChange(ACTION_TYPE.DELETE_EVENT, this.#event);
+  #handleDeleteClick = () => {
+    this.#handleDataChange(ACTION_TYPE.DELETE_EVENT, UpdateType.MINOR, this.#event);
   };
 
-  remove() {
+  destroy() {
     remove(this.#eventItem);
     remove(this.#editForm);
     this.#handleDestroy();

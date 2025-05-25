@@ -1,8 +1,4 @@
-import Observable from '../framework/observable';
-
-export const UpdateType = {
-  FILTER: 'filter'
-};
+import Observable from '../framework/observable.js';
 
 export const FilterType = {
   EVERYTHING: 'everything',
