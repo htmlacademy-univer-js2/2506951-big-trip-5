@@ -21,7 +21,7 @@ function getOfferTemplate(offer, eventOffers) {
   `;
 }
 
-function getEditFormTemplate(event, destinations, offers) {
+function getEditFormTemplate(event, destinations, offers, isDisabled = false, isSaving = false, isDeleting = false) {
   const {dateFrom, dateTo, type: eventType, destination: eventDestination, basePrice, offers: eventOffers} = event;
   const destination = getDestination(eventDestination, destinations);
   const eventIconUrl = getEventIconUrl(eventType);
@@ -34,7 +34,10 @@ function getEditFormTemplate(event, destinations, offers) {
   const isPriceValid = !Number.isNaN(priceNumber) && priceNumber > 0;
   const isDestinationValid = !!destination;
   const isDurationValid = !!getDuration(dateFrom, dateTo);
-  const isSubmitDisabled = !isPriceValid || !isDestinationValid || !isDurationValid;
+  const isSubmitDisabled = !isPriceValid || !isDestinationValid || !isDurationValid || isDisabled;
+
+  const saveButtonText = isSaving ? 'Saving...' : 'Save';
+  const deleteButtonText = isDeleting ? 'Deleting...' : 'Delete';
 
   return `
             <li class="trip-events__item">
@@ -125,8 +128,8 @@ function getEditFormTemplate(event, destinations, offers) {
                     <input class="event__input  event__input--price" id="event-price-1" type="number" name="event-price" value="${basePrice}">
                   </div>
 
-                  <button class="event__save-btn  btn  btn--blue" type="submit" ${isSubmitDisabled ? 'disabled' : ''}>Save</button>
-                  <button class="event__reset-btn" type="reset">Delete</button>
+                  <button class="event__save-btn  btn  btn--blue" type="submit" ${isSubmitDisabled ? 'disabled' : ''}>${saveButtonText}</button>
+                  <button class="event__reset-btn" type="reset" ${isDisabled ? 'disabled' : ''}>${deleteButtonText}</button>
                   <button class="event__rollup-btn" type="button">
                     <span class="visually-hidden">Open event</span>
                   </button>
@@ -164,6 +167,9 @@ export default class EditForm extends AbstractStatefulView {
   #handleClick = null;
   #handleDelete = null;
   #datepicker = null;
+  #isDisabled = false;
+  #isSaving = false;
+  #isDeleting = false;
 
   #typeChangeHandler = (evt) => {
     evt.preventDefault();
@@ -234,7 +240,7 @@ export default class EditForm extends AbstractStatefulView {
   }
 
   get template() {
-    return getEditFormTemplate(this._state, this.#destinations, this.#offers);
+    return getEditFormTemplate(this._state, this.#destinations, this.#offers, this.#isDisabled, this.#isSaving, this.#isDeleting);
   }
 
   removeElement() {
@@ -248,6 +254,25 @@ export default class EditForm extends AbstractStatefulView {
 
   reset(event) {
     this.updateElement(event);
+  }
+
+  setSaving() {
+    this.#isSaving = true;
+    this.#isDisabled = true;
+    this.updateElement({});
+  }
+
+  setDeleting() {
+    this.#isDeleting = true;
+    this.#isDisabled = true;
+    this.updateElement({});
+  }
+
+  setAborting() {
+    this.#isSaving = false;
+    this.#isDeleting = false;
+    this.#isDisabled = false;
+    this.updateElement({});
   }
 
   _restoreHandlers() {

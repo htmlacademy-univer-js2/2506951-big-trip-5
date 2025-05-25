@@ -47,7 +47,6 @@ export default class EventPresenter {
         offers: this.#offers,
         submitHandler: (value) => {
           this.#handleDataChange(ACTION_TYPE.ADD_EVENT, UpdateType.MINOR, value);
-          this.destroy();
         },
         clickHandler: () => {
           this.destroy();
@@ -70,7 +69,6 @@ export default class EventPresenter {
       offers: this.#offers,
       submitHandler: (value) => {
         this.#handleDataChange(ACTION_TYPE.UPDATE_EVENT, UpdateType.PATCH, value);
-        this.#replaceFromEditToItem();
       },
       clickHandler: () => {
         this.#editForm.reset(this.#event);
@@ -116,11 +114,23 @@ export default class EventPresenter {
 
   setAborting() {
     if (this.#mode === Mode.EDITING || this.#mode === Mode.ADDING) {
-      this.#editForm.shake();
+      this.#editForm.setAborting();
       return;
     }
 
     this.#eventItem.shake();
+  }
+
+  setSaving() {
+    if (this.#mode === Mode.EDITING || this.#mode === Mode.ADDING) {
+      this.#editForm.setSaving();
+    }
+  }
+
+  setDeleting() {
+    if (this.#mode === Mode.EDITING || this.#mode === Mode.ADDING) {
+      this.#editForm.setDeleting();
+    }
   }
 
   #replaceFromEditToItem() {

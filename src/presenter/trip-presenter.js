@@ -54,6 +54,7 @@ export default class TripPresenter {
 
     switch (actionType) {
       case ACTION_TYPE.UPDATE_EVENT:
+        this.#eventPresenters.get(payload.id).setSaving();
         try {
           await this.#eventsModel.updateEvent(updateType, payload);
         } catch (err) {
@@ -61,6 +62,7 @@ export default class TripPresenter {
         }
         break;
       case ACTION_TYPE.DELETE_EVENT:
+        this.#eventPresenters.get(payload.id).setDeleting();
         try {
           await this.#eventsModel.deleteEvent(updateType, payload);
         } catch (err) {
@@ -68,10 +70,18 @@ export default class TripPresenter {
         }
         break;
       case ACTION_TYPE.ADD_EVENT:
+        if (this.#newEventPresenter) {
+          this.#newEventPresenter.setSaving();
+        }
         try {
           await this.#eventsModel.addEvent(updateType, payload);
+          this.#newEventButton.disabled = false;
+          this.#newEventPresenter.destroy();
+          this.#newEventPresenter = null;
         } catch (err) {
-          this.#newEventPresenter.setAborting();
+          if (this.#newEventPresenter) {
+            this.#newEventPresenter.setAborting();
+          }
         }
         break;
       default:
@@ -84,7 +94,11 @@ export default class TripPresenter {
   #handleModelEvent = (updateType, data) => {
     switch (updateType) {
       case UpdateType.PATCH:
-        this.#eventPresenters.get(data.id).init(data);
+        if (this.#eventPresenters.has(data.id)) {
+          const presenter = this.#eventPresenters.get(data.id);
+          presenter.init(data);
+          setTimeout(() => presenter.resetView(), 0);
+        }
         break;
       case UpdateType.MINOR:
         this.#clearBoard();
