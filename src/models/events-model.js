@@ -1,48 +1,106 @@
-import {mockDestinations, mockEvents, mockOffers} from '../mock/event';
+import Observable from '../framework/observable.js';
+import {adaptEventToClient} from '../utils/adapter.js';
+import {UpdateType} from '../utils/const.js';
 
-export default class EventsModel {
-  constructor() {
-    this._events = [...mockEvents];
-    this._destinations = [...mockDestinations];
-    this._offers = [...mockOffers];
+export default class EventsModel extends Observable {
+  #eventsApiService = null;
+  #events = [];
+  #destinations = [];
+  #offers = [];
+
+  constructor({eventsApiService}) {
+    super();
+    this.#eventsApiService = eventsApiService;
   }
 
   get events() {
-    return [...this._events];
+    return this.#events;
   }
 
   get destinations() {
-    return [...this._destinations];
+    return this.#destinations;
   }
 
   get offers() {
-    return [...this._offers];
+    return this.#offers;
   }
 
-  setEvents(events) {
-    this._events = [...events];
-  }
+  async init() {
+    try {
+      const [events, destinations, offers] = await Promise.all([
+        this.#eventsApiService.events,
+        this.#eventsApiService.destinations,
+        this.#eventsApiService.offers
+      ]);
 
-  updateEvent(updatedEvent) {
-    const index = this._events.findIndex((event) => event.id === updatedEvent.id);
-    if (index === -1) {
+      this.#events = events.map(adaptEventToClient);
+      this.#destinations = destinations;
+      this.#offers = offers;
+    } catch (err) {
+      this.#events = [];
+      this.#destinations = [];
+      this.#offers = [];
+      this._notify(UpdateType.ERROR, null);
       return;
     }
-    this._events.splice(index, 1, updatedEvent);
+
+    this._notify(UpdateType.INIT, null);
   }
 
-  deleteEvent(eventId) {
-    const index = this._events.findIndex((event) => event.id === eventId);
+  async updateEvent(updateType, update) {
+    const index = this.#events.findIndex((event) => event.id === update.id);
+
     if (index === -1) {
-      throw new Error('Cannot delete nonexistent event');
+      throw new Error('Cannot update event');
     }
-    this._events = [
-      ...this._events.slice(0, index),
-      ...this._events.slice(index + 1)
-    ];
+
+    try {
+      const response = await this.#eventsApiService.updateEvent(update);
+      const updatedEvent = adaptEventToClient(response);
+
+      this.#events = [
+        ...this.#events.slice(0, index),
+        updatedEvent,
+        ...this.#events.slice(index + 1),
+      ];
+
+      this._notify(updateType, updatedEvent);
+    } catch (err) {
+      throw new Error('Cannot update event');
+    }
   }
 
-  addEvent(newEvent) {
-    this._events = [newEvent, ...this._events];
+  async addEvent(updateType, update) {
+    try {
+      const response = await this.#eventsApiService.addEvent(update);
+      const newEvent = adaptEventToClient(response);
+
+      this.#events = [newEvent, ...this.#events];
+
+      this._notify(updateType, newEvent);
+    } catch (err) {
+      throw new Error('Cannot add event');
+    }
+  }
+
+  async deleteEvent(updateType, update) {
+    const index = this.#events.findIndex((event) => event.id === update.id);
+
+    if (index === -1) {
+      throw new Error('Cannot delete event');
+    }
+
+    try {
+      await this.#eventsApiService.deleteEvent(update);
+
+      this.#events = [
+        ...this.#events.slice(0, index),
+        ...this.#events.slice(index + 1),
+      ];
+
+      this._notify(updateType, null);
+    } catch (err) {
+      throw new Error('Cannot delete event');
+    }
   }
 }
