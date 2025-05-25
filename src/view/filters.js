@@ -1,7 +1,7 @@
 import AbstractView from '../framework/view/abstract-view';
 import {FilterType} from '../models/filter-model';
 
-function createFiltersTemplate(currentFilter) {
+function createFiltersTemplate(currentFilter, disabledFilters = {}) {
   return `
     <form class="trip-filters" action="#" method="get">
       <div class="trip-filters__filter">
@@ -10,17 +10,17 @@ function createFiltersTemplate(currentFilter) {
       </div>
 
       <div class="trip-filters__filter">
-        <input id="filter-future" class="trip-filters__filter-input visually-hidden" type="radio" name="trip-filter" value="${FilterType.FUTURE}" ${currentFilter === FilterType.FUTURE ? 'checked' : ''}>
+        <input id="filter-future" class="trip-filters__filter-input visually-hidden" type="radio" name="trip-filter" value="${FilterType.FUTURE}" ${currentFilter === FilterType.FUTURE ? 'checked' : ''} ${disabledFilters.FUTURE ? 'disabled' : ''}>
         <label class="trip-filters__filter-label" for="filter-future">Future</label>
       </div>
 
       <div class="trip-filters__filter">
-        <input id="filter-present" class="trip-filters__filter-input visually-hidden" type="radio" name="trip-filter" value="${FilterType.PRESENT}" ${currentFilter === FilterType.PRESENT ? 'checked' : ''}>
+        <input id="filter-present" class="trip-filters__filter-input visually-hidden" type="radio" name="trip-filter" value="${FilterType.PRESENT}" ${currentFilter === FilterType.PRESENT ? 'checked' : ''} ${disabledFilters.PRESENT ? 'disabled' : ''}>
         <label class="trip-filters__filter-label" for="filter-present">Present</label>
       </div>
 
       <div class="trip-filters__filter">
-        <input id="filter-past" class="trip-filters__filter-input visually-hidden" type="radio" name="trip-filter" value="${FilterType.PAST}" ${currentFilter === FilterType.PAST ? 'checked' : ''}>
+        <input id="filter-past" class="trip-filters__filter-input visually-hidden" type="radio" name="trip-filter" value="${FilterType.PAST}" ${currentFilter === FilterType.PAST ? 'checked' : ''} ${disabledFilters.PAST ? 'disabled' : ''}>
         <label class="trip-filters__filter-label" for="filter-past">Past</label>
       </div>
 
@@ -31,17 +31,19 @@ function createFiltersTemplate(currentFilter) {
 
 export default class FiltersView extends AbstractView {
   #currentFilter = null;
+  #disabledFilters = null;
   #handler = null;
 
-  constructor({currentFilter, onFilterChange}) {
+  constructor({currentFilter, disabledFilters = {}, onFilterChange}) {
     super();
     this.#currentFilter = currentFilter;
+    this.#disabledFilters = disabledFilters;
     this.#handler = onFilterChange;
     this.element.addEventListener('change', this.#filterTypeChangeHandler);
   }
 
   get template() {
-    return createFiltersTemplate(this.#currentFilter);
+    return createFiltersTemplate(this.#currentFilter, this.#disabledFilters);
   }
 
   #filterTypeChangeHandler = (evt) => {
