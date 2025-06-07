@@ -1,7 +1,7 @@
 import EditForm from '../view/form-edit-view.js';
 import EventItemView from '../view/event-item-view.js';
 import {remove, render, replace, RenderPosition} from '../framework/render.js';
-import {ACTION_TYPE, UpdateType} from '../utils/const.js';
+import {ActionType, UpdateType} from '../utils/const.js';
 
 const Mode = {
   DEFAULT: 'DEFAULT',
@@ -41,7 +41,7 @@ export default class EventPresenter {
         destinations: this.#destinations,
         offers: this.#offers,
         submitHandler: (value) => {
-          this.#handleDataChange(ACTION_TYPE.ADD_EVENT, UpdateType.MINOR, value);
+          this.#handleDataChange(ActionType.ADD_EVENT, UpdateType.MINOR, value);
         },
         clickHandler: () => {
           this.destroy();
@@ -67,7 +67,7 @@ export default class EventPresenter {
       destinations: this.#destinations,
       offers: this.#offers,
       submitHandler: (value) => {
-        this.#handleDataChange(ACTION_TYPE.UPDATE_EVENT, UpdateType.PATCH, value);
+        this.#handleDataChange(ActionType.UPDATE_EVENT, UpdateType.PATCH, value);
       },
       clickHandler: () => {
         this.#editForm.reset(this.#event);
@@ -164,10 +164,10 @@ export default class EventPresenter {
   }
 
   #handleFavoriteChange() {
-    this.#handleDataChange(ACTION_TYPE.UPDATE_EVENT, UpdateType.PATCH, {...this.#event, isFavorite: !this.#event.isFavorite});
+    this.#handleDataChange(ActionType.UPDATE_EVENT, UpdateType.PATCH, {...this.#event, isFavorite: !this.#event.isFavorite});
   }
 
   #handleDeleteClick = () => {
-    this.#handleDataChange(ACTION_TYPE.DELETE_EVENT, UpdateType.MINOR, this.#event);
+    this.#handleDataChange(ActionType.DELETE_EVENT, UpdateType.MINOR, this.#event);
   };
 }
