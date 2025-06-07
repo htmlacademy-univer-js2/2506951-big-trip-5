@@ -1,7 +1,7 @@
-import EditForm from '../view/form-edit.js';
-import EventItem from '../view/event-item.js';
+import EditForm from '../view/form-edit-view.js';
+import EventItemView from '../view/event-item-view.js';
 import {remove, render, replace, RenderPosition} from '../framework/render.js';
-import {ACTION_TYPE, UpdateType} from '../utils/const.js';
+import {ActionType, UpdateType} from '../utils/const.js';
 
 const Mode = {
   DEFAULT: 'DEFAULT',
@@ -20,13 +20,7 @@ export default class EventPresenter {
   #handleModeChange = null;
   #handleDestroy = null;
   #mode = Mode.DEFAULT;
-  #escKeyDownHandler = (evt) => {
-    if (evt.key === 'Escape') {
-      evt.preventDefault();
-      this.#editForm.reset(this.#event);
-      this.#replaceFromEditToItem();
-    }
-  };
+
 
   constructor({destinations, offers, eventListComponent, onDataChange, onModeChange}) {
     this.#destinations = destinations;
@@ -41,16 +35,21 @@ export default class EventPresenter {
     this.#event = event;
     if (isNew) {
       this.#mode = Mode.ADDING;
+      document.addEventListener('keydown', this.#escKeyDownHandler);
       this.#editForm = new EditForm({
         event: this.#event,
         destinations: this.#destinations,
         offers: this.#offers,
         submitHandler: (value) => {
-          this.#handleDataChange(ACTION_TYPE.ADD_EVENT, UpdateType.MINOR, value);
+          this.#handleDataChange(ActionType.ADD_EVENT, UpdateType.MINOR, value);
         },
         clickHandler: () => {
           this.destroy();
-        }
+        },
+        deleteHandler: () => {
+          this.destroy();
+        },
+        isNew: true
       });
       render(this.#editForm, this.#eventListComponent.element, RenderPosition.AFTERBEGIN);
       const formElement = this.#editForm.element.querySelector('form');
@@ -68,7 +67,7 @@ export default class EventPresenter {
       destinations: this.#destinations,
       offers: this.#offers,
       submitHandler: (value) => {
-        this.#handleDataChange(ACTION_TYPE.UPDATE_EVENT, UpdateType.PATCH, value);
+        this.#handleDataChange(ActionType.UPDATE_EVENT, UpdateType.PATCH, value);
       },
       clickHandler: () => {
         this.#editForm.reset(this.#event);
@@ -76,7 +75,7 @@ export default class EventPresenter {
       },
       deleteHandler: this.#handleDeleteClick
     });
-    this.#eventItem = new EventItem({
+    this.#eventItem = new EventItemView({
       event: this.#event,
       destinations: this.#destinations,
       offers: this.#offers,
@@ -115,9 +114,9 @@ export default class EventPresenter {
   setAborting() {
     if (this.#mode === Mode.EDITING || this.#mode === Mode.ADDING) {
       this.#editForm.setAborting();
+      this.#editForm.shake();
       return;
     }
-
     this.#eventItem.shake();
   }
 
@@ -133,6 +132,24 @@ export default class EventPresenter {
     }
   }
 
+  destroy() {
+    remove(this.#eventItem);
+    remove(this.#editForm);
+    this.#handleDestroy();
+  }
+
+  #escKeyDownHandler = (evt) => {
+    if (evt.key === 'Escape') {
+      if (this.#mode === Mode.ADDING) {
+        this.destroy();
+        return;
+      }
+      evt.preventDefault();
+      this.#editForm.reset(this.#event);
+      this.#replaceFromEditToItem();
+    }
+  };
+
   #replaceFromEditToItem() {
     replace(this.#eventItem, this.#editForm);
     document.removeEventListener('keydown', this.#escKeyDownHandler);
@@ -147,16 +164,10 @@ export default class EventPresenter {
   }
 
   #handleFavoriteChange() {
-    this.#handleDataChange(ACTION_TYPE.UPDATE_EVENT, UpdateType.PATCH, {...this.#event, isFavorite: !this.#event.isFavorite});
+    this.#handleDataChange(ActionType.UPDATE_EVENT, UpdateType.PATCH, {...this.#event, isFavorite: !this.#event.isFavorite});
   }
 
   #handleDeleteClick = () => {
-    this.#handleDataChange(ACTION_TYPE.DELETE_EVENT, UpdateType.MINOR, this.#event);
+    this.#handleDataChange(ActionType.DELETE_EVENT, UpdateType.MINOR, this.#event);
   };
-
-  destroy() {
-    remove(this.#eventItem);
-    remove(this.#editForm);
-    this.#handleDestroy();
-  }
 }

@@ -1,4 +1,4 @@
-export const ACTION_TYPE = {
+export const ActionType = {
   UPDATE_EVENT: 'UPDATE_EVENT',
   DELETE_EVENT: 'DELETE_EVENT',
   ADD_EVENT: 'ADD_EVENT'

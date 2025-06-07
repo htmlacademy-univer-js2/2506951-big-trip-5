@@ -1,5 +1,5 @@
 import {render, replace, remove} from '../framework/render.js';
-import FiltersView from '../view/filters.js';
+import FiltersView from '../view/filters-view.js';
 import {UpdateType} from '../utils/const.js';
 import {getDisabledFilters} from '../utils/utils.js';
 

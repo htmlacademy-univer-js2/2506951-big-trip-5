@@ -36,7 +36,7 @@ export default class EventsModel extends Observable {
       this.#events = events.map(adaptEventToClient);
       this.#destinations = destinations;
       this.#offers = offers;
-    } catch (err) {
+    } catch (error) {
       this.#events = [];
       this.#destinations = [];
       this.#offers = [];
@@ -54,33 +54,25 @@ export default class EventsModel extends Observable {
       throw new Error('Cannot update event');
     }
 
-    try {
-      const response = await this.#eventsApiService.updateEvent(update);
-      const updatedEvent = adaptEventToClient(response);
+    const response = await this.#eventsApiService.updateEvent(update);
+    const updatedEvent = adaptEventToClient(response);
 
-      this.#events = [
-        ...this.#events.slice(0, index),
-        updatedEvent,
-        ...this.#events.slice(index + 1),
-      ];
+    this.#events = [
+      ...this.#events.slice(0, index),
+      updatedEvent,
+      ...this.#events.slice(index + 1),
+    ];
 
-      this._notify(updateType, updatedEvent);
-    } catch (err) {
-      throw new Error('Cannot update event');
-    }
+    this._notify(updateType, updatedEvent);
   }
 
   async addEvent(updateType, update) {
-    try {
-      const response = await this.#eventsApiService.addEvent(update);
-      const newEvent = adaptEventToClient(response);
+    const response = await this.#eventsApiService.addEvent(update);
+    const newEvent = adaptEventToClient(response);
 
-      this.#events = [newEvent, ...this.#events];
+    this.#events = [newEvent, ...this.#events];
 
-      this._notify(updateType, newEvent);
-    } catch (err) {
-      throw new Error('Cannot add event');
-    }
+    this._notify(updateType, newEvent);
   }
 
   async deleteEvent(updateType, update) {
@@ -90,17 +82,13 @@ export default class EventsModel extends Observable {
       throw new Error('Cannot delete event');
     }
 
-    try {
-      await this.#eventsApiService.deleteEvent(update);
+    await this.#eventsApiService.deleteEvent(update);
 
-      this.#events = [
-        ...this.#events.slice(0, index),
-        ...this.#events.slice(index + 1),
-      ];
+    this.#events = [
+      ...this.#events.slice(0, index),
+      ...this.#events.slice(index + 1),
+    ];
 
-      this._notify(updateType, null);
-    } catch (err) {
-      throw new Error('Cannot delete event');
-    }
+    this._notify(updateType, null);
   }
 }

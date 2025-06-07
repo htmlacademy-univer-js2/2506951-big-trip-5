@@ -71,7 +71,7 @@ function getEventItemTemplate(event, destinations, offers) {
   `;
 }
 
-export default class EventItem extends AbstractView {
+export default class EventItemView extends AbstractView {
   #event = null;
   #destinations = null;
   #offers = null;
