@@ -1,5 +1,5 @@
-import EditForm from '../view/form-edit.js';
-import EventItem from '../view/event-item.js';
+import EditForm from '../view/form-edit-view.js';
+import EventItemView from '../view/event-item-view.js';
 import {remove, render, replace, RenderPosition} from '../framework/render.js';
 import {ACTION_TYPE, UpdateType} from '../utils/const.js';
 
@@ -20,13 +20,7 @@ export default class EventPresenter {
   #handleModeChange = null;
   #handleDestroy = null;
   #mode = Mode.DEFAULT;
-  #escKeyDownHandler = (evt) => {
-    if (evt.key === 'Escape') {
-      evt.preventDefault();
-      this.#editForm.reset(this.#event);
-      this.#replaceFromEditToItem();
-    }
-  };
+
 
   constructor({destinations, offers, eventListComponent, onDataChange, onModeChange}) {
     this.#destinations = destinations;
@@ -41,6 +35,7 @@ export default class EventPresenter {
     this.#event = event;
     if (isNew) {
       this.#mode = Mode.ADDING;
+      document.addEventListener('keydown', this.#escKeyDownHandler);
       this.#editForm = new EditForm({
         event: this.#event,
         destinations: this.#destinations,
@@ -50,7 +45,11 @@ export default class EventPresenter {
         },
         clickHandler: () => {
           this.destroy();
-        }
+        },
+        deleteHandler: () => {
+          this.destroy();
+        },
+        isNew: true
       });
       render(this.#editForm, this.#eventListComponent.element, RenderPosition.AFTERBEGIN);
       const formElement = this.#editForm.element.querySelector('form');
@@ -76,7 +75,7 @@ export default class EventPresenter {
       },
       deleteHandler: this.#handleDeleteClick
     });
-    this.#eventItem = new EventItem({
+    this.#eventItem = new EventItemView({
       event: this.#event,
       destinations: this.#destinations,
       offers: this.#offers,
@@ -115,9 +114,9 @@ export default class EventPresenter {
   setAborting() {
     if (this.#mode === Mode.EDITING || this.#mode === Mode.ADDING) {
       this.#editForm.setAborting();
+      this.#editForm.shake();
       return;
     }
-
     this.#eventItem.shake();
   }
 
@@ -132,6 +131,24 @@ export default class EventPresenter {
       this.#editForm.setDeleting();
     }
   }
+
+  destroy() {
+    remove(this.#eventItem);
+    remove(this.#editForm);
+    this.#handleDestroy();
+  }
+
+  #escKeyDownHandler = (evt) => {
+    if (evt.key === 'Escape') {
+      if (this.#mode === Mode.ADDING) {
+        this.destroy();
+        return;
+      }
+      evt.preventDefault();
+      this.#editForm.reset(this.#event);
+      this.#replaceFromEditToItem();
+    }
+  };
 
   #replaceFromEditToItem() {
     replace(this.#eventItem, this.#editForm);
@@ -153,10 +170,4 @@ export default class EventPresenter {
   #handleDeleteClick = () => {
     this.#handleDataChange(ACTION_TYPE.DELETE_EVENT, UpdateType.MINOR, this.#event);
   };
-
-  destroy() {
-    remove(this.#eventItem);
-    remove(this.#editForm);
-    this.#handleDestroy();
-  }
 }

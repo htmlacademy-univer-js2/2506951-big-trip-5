@@ -1,6 +1,9 @@
 import dayjs from 'dayjs';
 
 function formatDate(date, format) {
+  if (!date) {
+    return '';
+  }
   return dayjs(date).format(format);
 }
 
@@ -23,12 +26,10 @@ function getDuration(dateFrom, dateTo) {
   if (days > 0) {
     result.push(`${formatToDisplayString(days)}D`);
   }
-  if (hours > 0) {
+  if (days > 0 || hours > 0) {
     result.push(`${formatToDisplayString(hours)}H`);
   }
-  if (finalMinutes > 0) {
-    result.push(`${formatToDisplayString(finalMinutes)}M`);
-  }
+  result.push(`${formatToDisplayString(finalMinutes)}M`);
 
   return result.join(' ');
 }
@@ -76,11 +77,13 @@ function getDisabledFilters(events) {
   const hasFuture = events.some(isEventInFuture);
   const hasPresent = events.some(isEventInPresent);
   const hasPast = events.some(isEventInPast);
+  const hasAny = hasFuture || hasPresent || hasPast;
 
   return {
     FUTURE: !hasFuture,
     PRESENT: !hasPresent,
-    PAST: !hasPast
+    PAST: !hasPast,
+    EVERYTHING: !hasAny
   };
 }
 
@@ -112,14 +115,11 @@ function getTripDates(events) {
   const endDate = dayjs(sortedEvents[sortedEvents.length - 1].dateTo);
 
   if (startDate.isSame(endDate, 'day')) {
-    return startDate.format('MMM DD');
+    return startDate.format('DD MMM');
   }
 
-  if (startDate.isSame(endDate, 'month')) {
-    return `${startDate.format('MMM DD')}—${endDate.format('DD')}`;
-  }
 
-  return `${startDate.format('MMM DD')}—${endDate.format('MMM DD')}`;
+  return `${startDate.format('DD MMM')}—${endDate.format('DD MMM')}`;
 }
 
 function getTripCost(events, offers) {

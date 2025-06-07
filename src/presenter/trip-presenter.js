@@ -1,10 +1,11 @@
 import {render, remove} from '../framework/render.js';
-import EventList from '../view/event-list.js';
-import Sorting from '../view/sorting.js';
+import EventListView from '../view/event-list-view.js';
+import SortingView from '../view/sorting-view.js';
 import EventPresenter from './event-presenter.js';
 import NoEventsView from '../view/no-events-view.js';
 import LoadingView from '../view/loading-view.js';
-import {UpdateType, ACTION_TYPE} from '../utils/const.js';
+import ErrorView from '../view/error-view.js';
+import {UpdateType, ActionType} from '../utils/const.js';
 import {FilterType} from '../models/filter-model.js';
 import UiBlocker from '../framework/ui-blocker/ui-blocker.js';
 
@@ -12,7 +13,7 @@ const TIMEOUT_LOWER_LIMIT = 350;
 const TIMEOUT_UPPER_LIMIT = 1000;
 
 export default class TripPresenter {
-  #eventListComponent = new EventList();
+  #eventListComponent = new EventListView();
   #loadingComponent = new LoadingView();
   #sortingComponent = null;
   #eventsContainer = document.querySelector('.trip-events');
@@ -25,6 +26,7 @@ export default class TripPresenter {
   #offers = null;
   #eventPresenters = new Map();
   #noEventsComponent = null;
+  #errorComponent = null;
   #isLoading = true;
   #uiBlocker = new UiBlocker({
     lowerLimit: TIMEOUT_LOWER_LIMIT,
@@ -49,27 +51,33 @@ export default class TripPresenter {
     render(this.#loadingComponent, this.#eventsContainer);
   }
 
+  #renderError() {
+    this.#errorComponent = new ErrorView();
+    render(this.#errorComponent, this.#eventsContainer);
+  }
+
   #handleViewAction = async (actionType, updateType, payload) => {
     this.#uiBlocker.block();
 
     switch (actionType) {
-      case ACTION_TYPE.UPDATE_EVENT:
+      case ActionType.UPDATE_EVENT:
         this.#eventPresenters.get(payload.id).setSaving();
         try {
           await this.#eventsModel.updateEvent(updateType, payload);
-        } catch (err) {
+          this.#handleSortTypeChange('day', true);
+        } catch {
           this.#eventPresenters.get(payload.id).setAborting();
         }
         break;
-      case ACTION_TYPE.DELETE_EVENT:
+      case ActionType.DELETE_EVENT:
         this.#eventPresenters.get(payload.id).setDeleting();
         try {
           await this.#eventsModel.deleteEvent(updateType, payload);
-        } catch (err) {
+        } catch {
           this.#eventPresenters.get(payload.id).setAborting();
         }
         break;
-      case ACTION_TYPE.ADD_EVENT:
+      case ActionType.ADD_EVENT:
         if (this.#newEventPresenter) {
           this.#newEventPresenter.setSaving();
         }
@@ -77,8 +85,9 @@ export default class TripPresenter {
           await this.#eventsModel.addEvent(updateType, payload);
           this.#newEventButton.disabled = false;
           this.#newEventPresenter.destroy();
+          this.#handleSortTypeChange('day', true);
           this.#newEventPresenter = null;
-        } catch (err) {
+        } catch {
           if (this.#newEventPresenter) {
             this.#newEventPresenter.setAborting();
           }
@@ -116,13 +125,13 @@ export default class TripPresenter {
       case UpdateType.ERROR:
         this.#isLoading = false;
         remove(this.#loadingComponent);
-        this.#renderBoard();
+        this.#renderError();
         break;
     }
   };
 
-  #handleSortTypeChange = (sortType) => {
-    if (this.#currentSortType === sortType) {
+  #handleSortTypeChange = (sortType, force = false) => {
+    if (this.#currentSortType === sortType && !force) {
       return;
     }
     this.#currentSortType = sortType;
@@ -160,15 +169,9 @@ export default class TripPresenter {
     if (resetSortType) {
       this.#currentSortType = 'day';
     }
-
-    if (this.#sortingComponent) {
-      remove(this.#sortingComponent);
-    }
-
-    if (this.#noEventsComponent) {
-      remove(this.#noEventsComponent);
-      this.#noEventsComponent = null;
-    }
+    remove(this.#sortingComponent);
+    remove(this.#noEventsComponent);
+    remove(this.#errorComponent);
   }
 
   #getEvents() {
@@ -210,14 +213,20 @@ export default class TripPresenter {
     this.#offers = this.#eventsModel.offers;
 
     const events = this.#getEvents();
+    const hasData = this.#destinations.length > 0 && this.#offers.length > 0;
 
-    if (events.length === 0) {
+    this.#newEventButton.disabled = !hasData;
+
+    if (events.length === 0 && !this.#newEventPresenter) {
       this.#noEventsComponent = new NoEventsView(this.#filterModel.filter);
       render(this.#noEventsComponent, this.#eventsContainer);
       return;
     }
 
-    this.#sortingComponent = new Sorting({onSortTypeChange: this.#handleSortTypeChange});
+    this.#sortingComponent = new SortingView({
+      onSortTypeChange: this.#handleSortTypeChange,
+      currentSortType: this.#currentSortType
+    });
     render(this.#sortingComponent, this.#eventsContainer);
     render(this.#eventListComponent, this.#eventsContainer);
 
@@ -227,17 +236,32 @@ export default class TripPresenter {
 
   #handleNewEventButtonClick = (evt) => {
     evt.preventDefault();
-    if (this.#newEventPresenter) {
+
+    if (!this.#destinations.length || !this.#offers.length) {
       return;
     }
+
+    const wasEmpty = this.#getEvents().length === 0;
+
     this.#currentSortType = 'day';
     this.#filterModel.setFilter(UpdateType.MAJOR, FilterType.EVERYTHING);
     this.#handleModeChange();
 
+    if (wasEmpty) {
+      remove(this.#noEventsComponent);
+      remove(this.#errorComponent);
+      this.#sortingComponent = new SortingView({
+        onSortTypeChange: this.#handleSortTypeChange,
+        currentSortType: this.#currentSortType
+      });
+      render(this.#sortingComponent, this.#eventsContainer);
+      render(this.#eventListComponent, this.#eventsContainer);
+    }
+
     const blankEvent = {
       basePrice: 0,
-      dateFrom: new Date(),
-      dateTo: new Date(),
+      dateFrom: null,
+      dateTo: null,
       destination: '',
       isFavorite: false,
       type: 'flight',
@@ -253,6 +277,10 @@ export default class TripPresenter {
       onDestroy: () => {
         this.#newEventPresenter = null;
         this.#newEventButton.disabled = false;
+        if (wasEmpty && this.#getEvents().length === 0) {
+          this.#clearBoard();
+          this.#renderBoard();
+        }
       }
     });
     this.#newEventPresenter.init(blankEvent, true);
