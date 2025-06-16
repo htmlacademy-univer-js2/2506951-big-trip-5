@@ -42,6 +42,10 @@ export default class SortingView extends AbstractView {
     this.element.addEventListener('change', this.#sortTypeChangeHandler);
   }
 
+  get template() {
+    return getSortingTemplate(this.#currentSortType);
+  }
+
   #sortTypeChangeHandler = (evt) => {
     const sortType = evt.target.dataset.sortType;
     if (!sortType) {
@@ -49,8 +53,4 @@ export default class SortingView extends AbstractView {
     }
     this.#handler(sortType);
   };
-
-  get template() {
-    return getSortingTemplate(this.#currentSortType);
-  }
 }
