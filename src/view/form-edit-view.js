@@ -211,7 +211,7 @@ export default class EditForm extends AbstractStatefulView {
     this.element.querySelector('.event__input--destination').addEventListener('input', this.#destinationChangeHandler);
     this.element.querySelector('.event__input--price').addEventListener('change', this.#priceChangeHandler);
     this.element.querySelectorAll('.event__offer-checkbox').forEach((element) => element.addEventListener('change', this.#offersChangeHandler));
-    this.element.querySelectorAll('.event__input--time').forEach((element) => element.addEventListener('click', this.#setDatePicker));
+    this.#setDatePicker();
   }
 
   #typeChangeHandler = (evt) => {
@@ -249,15 +249,22 @@ export default class EditForm extends AbstractStatefulView {
     this.updateElement(payload);
   };
 
-  #setDatePicker = (evt) => {
-    const isStartTime = evt.target.getAttribute('name') === 'event-start-time';
-    this.#datepicker = flatpickr(
-      this.element.querySelector('.event__field-group--time'),
+  #setDatePicker = () => {
+    flatpickr(
+      this.element.querySelector('input[name="event-start-time"]'),
       {
-        dateFormat: 'H i',
-        defaultDate: (isStartTime ? this._state.dateFrom : this._state.dateTo) ?? new Date(),
+        dateFormat: 'd/m/y H:i',
+        defaultDate: (this._state.dateFrom) ?? new Date(),
         enableTime: true,
-        onClose: (res) => this.#dateChangeHandler(res[0], isStartTime),
+        onChange: (res) => this.#dateChangeHandler(res[0], true),
+      });
+    flatpickr(
+      this.element.querySelector('input[name="event-end-time"]'),
+      {
+        dateFormat: 'd/m/y H:i',
+        defaultDate: (this._state.dateTo) ?? new Date(),
+        enableTime: true,
+        onChange: (res) => this.#dateChangeHandler(res[0], false),
       },
     );
   };
